@@ -58,9 +58,14 @@
         protected override void Awake()
         {
             base.Awake();
-            unityMicEnum = new AudioInEnumerator(this.Logger);
+            // All enumerators trigger refresh automatically in constructor.
+            unityMicEnum = new Unity.AudioInEnumerator(this.Logger);
             photonMicEnum = Platform.CreateAudioInEnumerator(this.Logger);
-            this.RefreshMicrophones();
+            photonMicEnum.OnReady = () => // refreshes asynchronously on WebGL
+            {
+                this.SetupMicDropdown();
+                this.SetCurrentValue();
+            };
             this.refreshButton.GetComponentInChildren<Button>().onClick.AddListener(RefreshMicrophones);
 
             this.fillArea = this.micLevelSlider.fillRect.GetComponent<Image>();
@@ -99,22 +104,23 @@
             this.micOptions = new List<MicRef>();
             List<string> micOptionsStrings = new List<string>();
 
+            // using non-breaking spaces in menu items to avoid loosing text after the break
             this.micOptions.Add(new MicRef(Recorder.MicType.Unity, DeviceInfo.Default));
-            micOptionsStrings.Add(string.Format("[Unity] [Default]"));
+            micOptionsStrings.Add(string.Format("[Unity]\u00A0[Default]"));
 
             foreach (var d in this.unityMicEnum)
             {
                 this.micOptions.Add(new MicRef(Recorder.MicType.Unity, d));
-                micOptionsStrings.Add(string.Format("[Unity] {0}", d));
+                micOptionsStrings.Add(string.Format("[Unity]\u00A0{0}", d));
             }
 
             this.micOptions.Add(new MicRef(Recorder.MicType.Photon, DeviceInfo.Default));
-            micOptionsStrings.Add(string.Format("[Photon] [Default]"));
+            micOptionsStrings.Add(string.Format("[Photon]\u00A0[Default]"));
 
             foreach (var d in this.photonMicEnum)
             {
                 this.micOptions.Add(new MicRef(Recorder.MicType.Photon, d));
-                micOptionsStrings.Add(string.Format("[Photon] {0}", d));
+                micOptionsStrings.Add(string.Format("[Photon]\u00A0{0}", d));
             }
 
             this.micDropdown.AddOptions(micOptionsStrings);
@@ -172,10 +178,9 @@
 
         public void RefreshMicrophones()
         {
-            this.unityMicEnum.Refresh();
+        	// the result is processed in photonMicEnum.OnReady
+            this.unityMicEnum.Refresh(); 
             this.photonMicEnum.Refresh();
-            this.SetupMicDropdown();
-            this.SetCurrentValue();
         }
 
         // sync. UI in case a change happens from the Unity Editor Inspector

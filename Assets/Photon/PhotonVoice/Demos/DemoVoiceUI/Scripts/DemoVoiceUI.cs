@@ -156,7 +156,7 @@ namespace Photon.Voice.Unity.Demos.DemoVoiceUI
             this.SetDefaults();
             this.InitUiCallbacks();
             this.GetSavedNickname();
-            this.voiceConnection.PrimaryRecorder.InputFactory = () => new AudioUtil.ToneAudioPusher<float>(440, 100, 48000, 2);
+            this.voiceConnection.PrimaryRecorder.InputFactory = () => new AudioUtil.ToneAudioReader<float>(null, 440, 48000, 2); // WebGL supports only Reader
 
             this.voiceConnection.SpeakerLinked += this.OnSpeakerCreated;
             this.voiceConnection.Client.AddCallbackTarget(this);
@@ -282,7 +282,7 @@ namespace Photon.Voice.Unity.Demos.DemoVoiceUI
 
         private void ToggleAudioClipStreaming(bool isOn)
         {
-            this.microphoneSelector.gameObject.SetActive(!isOn && !this.audioToneToggle.isOn);
+            //this.microphoneSelector.gameObject.SetActive(!isOn && !this.audioToneToggle.isOn);
             if (isOn)
             {
                 this.audioToneToggle.SetValue(false);
@@ -296,7 +296,7 @@ namespace Photon.Voice.Unity.Demos.DemoVoiceUI
 
         private void ToggleAudioToneFactory(bool isOn)
         {
-            this.microphoneSelector.gameObject.SetActive(!isOn && !this.streamAudioClipToggle.isOn);
+            //this.microphoneSelector.gameObject.SetActive(!isOn && !this.streamAudioClipToggle.isOn);
             if (isOn)
             {
                 this.streamAudioClipToggle.SetValue(false);
@@ -482,7 +482,7 @@ namespace Photon.Voice.Unity.Demos.DemoVoiceUI
 
             this.reverseStreamDelayInputField.SetSingleOnEndEditCallback(this.OnReverseStreamDelayChanged);
 
-            this.microphoneSelector.SetSingleOnValueChangedCallback(this.OnMicrophoneChanged);
+            //this.microphoneSelector.SetSingleOnValueChangedCallback(this.OnMicrophoneChanged);
 
             this.androidAgcToggle.SetSingleOnValueChangedCallback(this.OnAndroidMicSettingsChanged);
             this.androidAecToggle.SetSingleOnValueChangedCallback(this.OnAndroidMicSettingsChanged);
@@ -503,7 +503,7 @@ namespace Photon.Voice.Unity.Demos.DemoVoiceUI
             this.androidAecToggle.SetValue(this.voiceConnection.PrimaryRecorder.AndroidMicrophoneAEC);
             this.androidNsToggle.SetValue(this.voiceConnection.PrimaryRecorder.AndroidMicrophoneNS);
 
-            this.microphoneSelector.gameObject.SetActive(!this.streamAudioClipToggle.isOn && !this.audioToneToggle.isOn);
+            //this.microphoneSelector.gameObject.SetActive(!this.streamAudioClipToggle.isOn && !this.audioToneToggle.isOn);
 
             if (this.webRtcDspGameObject != null)
             {
