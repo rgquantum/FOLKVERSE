@@ -183,10 +183,8 @@ namespace Photon.Voice
 
             var sendOpt = new SendOptions()
             {
-                DeliveryMode = ((flags & FrameFlags.Config) != 0) ? DeliveryMode.Reliable : // config frame should be send in sync with voice info
-                    cppCompatibilityMode ?
-                        par.Reliable ? DeliveryMode.Reliable : DeliveryMode.Unreliable :
-                        par.Reliable ? DeliveryMode.ReliableUnsequenced : DeliveryMode.UnreliableUnsequenced,
+                DeliveryMode = cppCompatibilityMode ? par.Reliable ? DeliveryMode.Reliable : DeliveryMode.Unreliable
+                                                    : par.Reliable ? DeliveryMode.ReliableUnsequenced : DeliveryMode.UnreliableUnsequenced,
                 Channel = (byte)channelId,
                 Encrypt = par.Encrypt,
             };

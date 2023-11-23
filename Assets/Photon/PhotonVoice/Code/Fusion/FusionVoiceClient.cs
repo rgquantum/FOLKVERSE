@@ -13,12 +13,8 @@ namespace Photon.Voice.Fusion
 
     [AddComponentMenu("Photon Voice/Fusion/Fusion Voice Client")]
     [RequireComponent(typeof(NetworkRunner))]
-    public class FusionVoiceClient : VoiceFollowClient, INetworkRunnerCallbacks
+    public class FusionVoiceClient : VoiceConnection, INetworkRunnerCallbacks
     {
-        // abstract VoiceFollowClient implementation
-        protected override bool LeaderInRoom => this.networkRunner.SessionInfo.IsValid;
-        protected override bool LeaderOfflineMode => networkRunner.GameMode == GameMode.Single;
-
 #region Private Fields
 
         private NetworkRunner networkRunner;
@@ -50,14 +46,13 @@ namespace Photon.Voice.Fusion
 
 #region Private Methods
 
-        protected override void Start()
+        protected virtual void Start()
         {
             // skip "Temporary Runner Prefab"
             if (this.networkRunner.State == NetworkRunner.States.Shutdown)
             {
                 return;
             }
-            base.Start();
 
             if (this.UsePrimaryRecorder)
             {
@@ -70,6 +65,11 @@ namespace Photon.Voice.Fusion
                     this.Logger.LogError("Primary Recorder is not set.");
                 }
             }
+
+            if (this.networkRunner.IsPlayer && (this.networkRunner.IsConnectedToServer || this.networkRunner.IsServer))
+            {
+                this.VoiceConnectOrJoinRoom();
+            }
         }
 
         protected override void Awake()
@@ -78,11 +78,18 @@ namespace Photon.Voice.Fusion
 
             this.networkRunner = this.GetComponent<NetworkRunner>();
             VoiceRegisterCustomTypes();
+            this.Client.StateChanged += this.OnVoiceClientStateChanged;
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
+            this.Client.StateChanged -= this.OnVoiceClientStateChanged;
+        }
+
+        private void OnVoiceClientStateChanged(ClientState previous, ClientState current)
+        {
+            this.VoiceConnectOrJoinRoom();
         }
 
         protected override Speaker InstantiateSpeakerForRemoteVoice(int playerId, byte voiceId, object userData)
@@ -111,33 +118,48 @@ namespace Photon.Voice.Fusion
                 this.Logger.LogWarning("No voiceNetworkObject found with ID {0}. Remote voice {1}/{2} not linked.", networkId, playerId, voiceId);
                 return null;
             }
-            this.Logger.LogInfo("Using VoiceNetworkObject {0} Speaker for remote voice  p#{1} v#{2}.", userData, playerId, voiceId);
+            this.Logger.LogWarning("Using VoiceNetworkObject {0} Speaker for remote voice {1}/{2}.", userData, playerId, voiceId);
             return voiceNetworkObject.SpeakerInUse;
         }
 
-        private string fusionOfflineVoiceRoomName;
-        private string FusionOfflineVoiceRoomName
+        private string VoiceGetMirroringRoomName()
         {
-            get
+            return string.Format("{0}_voice", this.networkRunner.SessionInfo.Name);
+        }
+
+        private void VoiceConnectOrJoinRoom()
+        {
+            switch (this.ClientState)
             {
-                if (fusionOfflineVoiceRoomName == null)
-                {
-                    fusionOfflineVoiceRoomName = string.Format("fusion_oflline_{0}_voice", Guid.NewGuid());
-                }
-                return fusionOfflineVoiceRoomName;
+                case ClientState.PeerCreated:
+                case ClientState.Disconnected:
+                    if (!this.VoiceConnectAndFollowFusion())
+                    {
+                        this.Logger.LogError("Connecting to server failed.");
+                    }
+                    break;
+                case ClientState.ConnectedToMasterServer:
+                    if (!this.VoiceJoinMirroringRoom())
+                    {
+                        this.Logger.LogError("Joining a voice room failed.");
+                    }
+                    break;
+                case ClientState.Joined:
+                    string expectedRoomName = this.VoiceGetMirroringRoomName();
+                    string currentRoomName = this.Client.CurrentRoom.Name;
+                    if (!currentRoomName.Equals(expectedRoomName))
+                    {
+                        this.Logger.LogWarning("Voice room mismatch: Expected:\"{0}\" Current:\"{1}\", leaving the second to join the first.", expectedRoomName, currentRoomName);
+                        if (!this.Client.OpLeaveRoom(false))
+                        {
+                            this.Logger.LogError("Leaving the current voice room failed.");
+                        }
+                    }
+                    break;
             }
         }
 
-        // abstract VoiceFollowClient implementation
-        protected override string GetVoiceRoomName()
-        {
-            return networkRunner.GameMode == GameMode.Single || !this.networkRunner.SessionInfo.IsValid ?
-                FusionOfflineVoiceRoomName :
-                string.Format("{0}_voice", this.networkRunner.SessionInfo.Name);
-        }
-
-        // abstract VoiceFollowClient implementation
-        protected override bool ConnectVoice()
+        private bool VoiceConnectAndFollowFusion()
         {
             AppSettings settings = new AppSettings();
             if (this.UseFusionAppSettings)
@@ -206,6 +228,27 @@ namespace Photon.Voice.Fusion
                 }
             }
             return this.ConnectUsingSettings(settings);
+        }
+
+        private void VoiceDisconnect()
+        {
+            this.Client.Disconnect();
+        }
+
+        private bool VoiceJoinRoom(string voiceRoomName)
+        {
+            if (string.IsNullOrEmpty(voiceRoomName))
+            {
+                this.Logger.LogError("Voice room name is null or empty.");
+                return false;
+            }
+            this.voiceRoomParams.RoomName = voiceRoomName;
+            return this.Client.OpJoinOrCreateRoom(this.voiceRoomParams);
+        }
+
+        private bool VoiceJoinMirroringRoom()
+        {
+            return this.VoiceJoinRoom(this.VoiceGetMirroringRoomName());
         }
 
         private static void VoiceRegisterCustomTypes()
@@ -295,7 +338,7 @@ namespace Photon.Voice.Fusion
             if (runner.LocalPlayer == player)
             {
                 this.Logger.LogInfo("Local player joined, calling VoiceConnectOrJoinRoom");
-                LeaderStateChanged(ClientState.Joined);
+                this.VoiceConnectOrJoinRoom();
             }
         }
 
@@ -305,7 +348,7 @@ namespace Photon.Voice.Fusion
             if (runner.LocalPlayer == player)
             {
                 this.Logger.LogInfo("Local player left, calling VoiceDisconnect");
-                LeaderStateChanged(ClientState.Disconnected);
+                this.VoiceDisconnect();
             }
         }
 
@@ -323,12 +366,13 @@ namespace Photon.Voice.Fusion
 
         void INetworkRunnerCallbacks.OnConnectedToServer(NetworkRunner runner)
         {
-            LeaderStateChanged(ClientState.ConnectedToMasterServer);
+            this.VoiceConnectOrJoinRoom();
         }
 
         void INetworkRunnerCallbacks.OnDisconnectedFromServer(NetworkRunner runner)
         {
-            LeaderStateChanged(ClientState.Disconnected);
+            this.Logger.LogInfo("OnDisconnectedFromServer, calling VoiceDisconnect");
+            this.VoiceDisconnect();
         }
 
         void INetworkRunnerCallbacks.OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)

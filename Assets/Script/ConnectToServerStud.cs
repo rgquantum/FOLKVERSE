@@ -12,11 +12,10 @@ public class ConnectToServerStud : MonoBehaviourPunCallbacks
         PhotonNetwork.ConnectUsingSettings();
     }
 
-    
 
     public override void OnConnectedToMaster()
     {
-        PhotonNetwork.JoinLobby();  
+        PhotonNetwork.JoinLobby();
     }
 
     public override void OnJoinedLobby()

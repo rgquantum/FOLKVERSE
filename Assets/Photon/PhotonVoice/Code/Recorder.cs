@@ -635,7 +635,7 @@ namespace Photon.Voice.Unity
         int restartRecordingPending = 0;
 
         /// <summary>
-        /// Restarts recording if <see cref="Recorder.RecordingEnabled"/> is true
+        /// Restarts recording if <see cref="Recorder.IsRecoring"/> is true
         /// </summary>
         public bool RestartRecording()
         {

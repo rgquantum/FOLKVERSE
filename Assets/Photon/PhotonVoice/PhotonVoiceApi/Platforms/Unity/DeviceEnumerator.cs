@@ -19,11 +19,6 @@ namespace Photon.Voice.Unity
                 var d = unityDevs[i];
                 devices.Add(new DeviceInfo(d));
             }
-
-            if (OnReady != null)
-            {
-                OnReady();
-            }
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -55,11 +50,6 @@ namespace Photon.Voice.Unity
             {
                 var d = unityDevs[i];
                 devices.Add(new DeviceInfo(d.name));
-            }
-
-            if (OnReady != null)
-            {
-                OnReady();
             }
         }
 
