@@ -20,7 +20,23 @@ public class PlayerMovement : MonoBehaviourPun
 
     void Start()
     {
-        view = GetComponent<PhotonView>();
+
+        view = this.gameObject.GetComponent<PhotonView>();
+        rb = this.gameObject.GetComponent<Rigidbody2D>();
+        animator = this.gameObject.GetComponent<Animator>();
+
+        CameraWork _cameraWork = this.gameObject.GetComponent<CameraWork>();
+
+         if (_cameraWork != null)
+        {
+            if (photonView.IsMine)
+            {
+                _cameraWork.OnStartFollowing();
+            }
+        }
+
+
+        
     }
 
      
@@ -32,8 +48,9 @@ public class PlayerMovement : MonoBehaviourPun
         {
         movement.x = Input.GetAxisRaw("Horizontal");
         movement.y = Input.GetAxisRaw("Vertical");
+        }
 
-        if(!photonView.IsMine)
+        if(!view.IsMine)
         {
             return;
         }
@@ -41,7 +58,7 @@ public class PlayerMovement : MonoBehaviourPun
         animator.SetFloat("Horizontal", movement.x);
         animator.SetFloat("Vertical", movement.y);
         animator.SetFloat("Speed", movement.sqrMagnitude);
-        }
+        
         // input
         
 

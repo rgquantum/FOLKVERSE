@@ -27,8 +27,9 @@ public class CreateRoom : MonoBehaviourPunCallbacks
     }
 
 
+
     public override void OnJoinedRoom()
     {
-        PhotonNetwork.LoadLevel("LOBBY");
+        PhotonNetwork.LoadLevel("NEW LOBBY");
     }
 }
