@@ -22,7 +22,7 @@ public class ConnectToServer : MonoBehaviourPunCallbacks
 
     public override void OnJoinedLobby()
     {
-        SceneManager.LoadScene(3);
+        SceneManager.LoadScene("MAIN MENU TEACHER");
         Debug.Log("Joined");
     }
 

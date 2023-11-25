@@ -52,12 +52,12 @@ public class signUpAnim : MonoBehaviour
 
     public void loginStudent()
     {
-        SceneManager.LoadScene(1);
+        SceneManager.LoadScene("LOADING TO MAIN STUD");
     }
 
     public void loginTeacher()
     {
-        SceneManager.LoadScene(2);
+        SceneManager.LoadScene("LOADING TO MAIN");
     }
 
 }

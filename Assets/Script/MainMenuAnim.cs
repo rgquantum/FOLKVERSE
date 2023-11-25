@@ -68,12 +68,12 @@ public class MainMenuAnim : MonoBehaviour
 
     public void loginTButton()
     {
-        SceneManager.LoadScene(2);
+        SceneManager.LoadScene("LOADING TO MAIN");
     }
 
     public void loginSTButton()
     {
-        SceneManager.LoadScene(1);
+        SceneManager.LoadScene("LOADING TO MAIN STUD");
     }
 
     public void joinOpen()

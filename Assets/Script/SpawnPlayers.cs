@@ -13,14 +13,27 @@ public class SpawnPlayers : MonoBehaviour
     public float minY;
     public float maxY;
 
-    [PunRPC]
 
+    [PunRPC]
     // Start is called before the first frame update
     private void Start()
-    {
-        Vector2 randomposition = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
+    {   
+
+
+
+        if(PlayerMovement.LocalPlayerInstance == null)
+        {
+            Vector2 randomposition = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
             PhotonNetwork.Instantiate(playerPrefabs.name, randomposition, Quaternion.identity);
-        PhotonNetwork.AutomaticallySyncScene = true;
+            Debug.Log("spawned players");
+        }
+        else
+        {
+            GameObject.FindWithTag("Player").transform.position = this.gameObject.transform.position;
+        }
+
+        
+        
     }
 
     // Update is called once per frame
@@ -28,6 +41,20 @@ public class SpawnPlayers : MonoBehaviour
     {
         
     }
+
+    void Awake()
+    {
+
+    }
+
+
+    void SpawnOther()
+    {
+
+    }
+
+
+    
 
 
 }
